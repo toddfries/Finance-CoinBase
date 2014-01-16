@@ -1,0 +1,4 @@
+Revision history for Perl extension Finance::CoinBase.
+
+0.00  Thu Jan 16 12:05:26 CST 2014
+	- original working progress, copied and purged Finance::btce
