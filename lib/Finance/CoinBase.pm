@@ -104,7 +104,8 @@ sub _apikey
 
 sub _apiget
 {
-	my ($version, $url) = @_;
+	my ($url) = @_;
+	my $version = $user_agent;
 
 	my $browser = _newagent($version);
 	my $retrycount = 0;
@@ -147,7 +148,7 @@ sub _apiprice
 		return  \%i;
 	}
 
-	my $ret = _apiget($user_agent, $apiurl."/prices/".$type);
+	my $ret = _apiget($apiurl."/prices/".$type);
 	if (!defined($ret)) {
 		my %i;
 		return \%i;
@@ -215,7 +216,7 @@ sub _mech
 
 sub _newagent
 {
-	my ($version) = @_;
+	my $version = $user_agent;
 	my $agent = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1}, env_proxy => 1);
 	if (defined($version)) {
 		$agent->agent($version);
