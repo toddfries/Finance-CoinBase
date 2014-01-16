@@ -25,6 +25,7 @@ use Finance::CoinBase ':all';
 if ($@) {
 	printf STDERR "You need to install Finance::CoinBase\n";
 }
+use Data::Dumper;
 
 my ($apikey, $secret);
 
@@ -81,119 +82,66 @@ act
 	}
 
 	if (!defined($res)) {
+		print "<undef>\n";
 		return;
 	}
 
-	if (ref($res) eq "HASH") {
-		if (! @resultkeys) {
-			@resultkeys = keys %{$res};
-		}
-	foreach my $var (@resultkeys)
-	{
-		my $val = ${$res}{$var};
-		printf " %s = ", $var;
-		unless (ref($val)) {
-			if (defined($val)) {
-				printf "%s\n", $val;
-			} else {
-				print "<undef>\n";
-			}
-			next;
-		}
-		if (ref($val) eq "HASH") {
-			print "HASH {\n";
-			my $keyfmt = "'%s'";
-			my @keys = keys %{$val};
-			my @sortedkeys = @keys;
-			if ($argv[0] =~ /^(history|activeorders)/) {
-				@sortedkeys = sort @keys;
-				$keyfmt = "%d";
-			}
-			foreach my $k (@sortedkeys) {
-				my $v = ${$val}{$k};
-				printf "\t".$keyfmt." => ",$k;
-				unless (ref($v)) {
-					printf "'%s',\n",$v;
-					next;
-				}
-				if (ref($v) eq "HASH") {
-					print "HASH {\n";
-					my $valfmt = "'%s'";
-					if ($k eq "funds") {
-						$valfmt = "%0.8f";
-					}
-					foreach my $l (keys %{$v}) {
-						# temp value format
-						my $tvf = $valfmt;
-						printf "\t\t'%s' => ",$l;
-						if ($l =~ /rate|amount/) {
-							$tvf = "%0.8f";
-						} elsif ($l =~ /timestamp|order_id/) {
-							$tvf = "%d";
-						}
-						printf $tvf.",\n", ${$v}{$l};
-					}
-					print "\t},\n";
-					next;
-				}
-				print "\t".ref($val)." {...},\n";
-			}
-			print "},\n";
-			next;
-		}
-		if (ref($val) eq "ARRAY") {
-			
-				
-			print "ARRAY (\n";
-			foreach my $k (@{$val}) {
-				unless (ref($val)) {
-					printf "\t'%s',\n", $k;
-					next;
-				}
-				if (ref($k) eq "ARRAY") {
-					print "\tARRAY (\n";
-					foreach my $l (@{$k}) {
-						printf "\t\t'%s',\n",$l;
-					}
-					print "\t),\n";
-				}
-			}
-			print ")\n";
-			next;
-		}
-		print ref($val)." {...},\n";
-	}
-	} elsif (ref($res) eq "ARRAY") {
-		print " ARRAY (\n";
-		foreach my $var (@{$res}) {
-			unless (ref($var)) {
-				printf "\t%s\n", $var;
-				next;
-			}
-			if (ref($var) eq "HASH") {
-				print "\tHASH {\n";
-				foreach my $k (keys %{$var}) {
-					my $v = ${$var}{$k};
-					printf "\t\t'%s' = ",$k;
-					unless (ref($v)) {
-						printf "'%s',\n", $v;
-						next;
-					}
-					print ref($v)." ...,\n";
-					next;
-				
-				}
-				print "\t},\n";
-				next;
-			}
-			print ref($var)." ...,\n";
-			next;
-		}
-		print ")\n";
-	}
+	print mydump($res);
 	return;
 	apikeywarn:
 	printf STDERR "%s requires an api key, noop\n", $argv[0];
+}
+
+sub
+mydump
+{
+	my ($info, $indent, $oindent) = @_;
+
+	my $ai = "    ";
+
+	if (!defined($indent)) {
+		$indent = "";
+	}
+	if (!defined($oindent)) {
+		$oindent = "";
+	}
+	if (!defined($info)) {
+		$info = "<undef>";
+	}
+
+	my $type = ref($info);
+
+	unless ($type) {
+		printf " %s\n", $info;
+		return;
+	}
+
+	if ($type eq "ARRAY") {
+		printf "ARRAY (\n";
+		foreach my $a (@{$info}) {
+			print $indent;
+			mydump($a, $indent.$ai, $indent);
+		}
+		printf "%s),\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "HASH") {
+		print "HASH {";
+		my @keylist = keys %{$info};
+		if (! @keylist || $#keylist < 0) {
+			print " <empty> }\n";
+			return;
+		}
+		print "\n";
+		foreach my $k (keys %{$info}) {
+			printf "%s '%s' => ", $indent.$ai, $k;
+			mydump($info->{$k}, $indent.$ai.$ai, $indent);
+		}
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	printf "%s %s (unhandled)\n", $indent, $type;
+	return;
 }
 
 if (@ARGV) {
