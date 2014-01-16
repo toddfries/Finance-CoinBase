@@ -40,9 +40,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw(Conversion) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw(new get set);
-
-our $VERSION = '0.1';
+our $VERSION = '0.0';
 
 our $json = JSON->new->allow_nonref;
 our $user_agent = "Mozilla/4.76 [en] (Win98; U)";
