@@ -19,10 +19,13 @@
 	"spotrate" : {
 	    "path" : "/prices/spot_rate",
 	    "method" : "GET"
+	},
+	"historical" : {
+	    "path" : "/prices/historical",
+	    "method" : "GET"
 	}
   },
    "declare" : {
-      "toupdate_base_url" : "http://localhost:5000",
       "api_format_mode" : "content-type",
       "api_format" : "json"
    }

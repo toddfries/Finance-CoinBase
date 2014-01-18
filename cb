@@ -68,7 +68,7 @@ act
 		return;
 	}
 	my $cmd = shift @argv;
-	if ($cmd =~ /(buyrate|spotrate|sellrate|currencies|currencyexchange)/) {
+	if ($cmd =~ /(buyrate|spotrate|sellrate|currencies|currencyexchange|historical)/) {
 		$res = $cb->api($cmd);
 	} elsif ($cmd eq "quit") {
 		exit(0);
