@@ -1,0 +1,29 @@
+{
+  "methods" : {
+	"currencies" : {
+	    "path" : "/currencies",
+	    "method" : "GET"
+	},
+	"currencyexchange" : {
+	    "path" : "/currencies/exchange_rates",
+	    "method" : "GET"
+	},
+	"buyrate" : {
+	    "path" : "/prices/buy",
+	    "method" : "GET"
+	},
+	"sellrate" : {
+	    "path" : "/prices/sell",
+	    "method" : "GET"
+	},
+	"spotrate" : {
+	    "path" : "/prices/spot_rate",
+	    "method" : "GET"
+	}
+  },
+   "declare" : {
+      "toupdate_base_url" : "http://localhost:5000",
+      "api_format_mode" : "content-type",
+      "api_format" : "json"
+   }
+}

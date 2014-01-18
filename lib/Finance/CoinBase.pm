@@ -18,12 +18,11 @@ use 5.012004;
 use strict;
 use warnings;
 use POSIX; # for INT_MAX
-use JSON;
-use LWP::UserAgent;
+use Net::HTTP::Spore;
 use Carp qw(croak);
-use Digest::SHA qw(hmac_sha512_hex);
-use WWW::Mechanize;
-use MIME::Base64;
+
+#use Digest::SHA qw(hmac_sha512_hex);
+#use MIME::Base64;
 
 require Exporter;
 
@@ -33,24 +32,37 @@ our @ISA = qw(Exporter);
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
-# This allows declaration	use Finance::CoinBase ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(Conversion) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
 our $VERSION = '0.0';
 
+# maybe these bits can go away?
+use JSON;
+use WWW::Mechanize;
 our $json = JSON->new->allow_nonref;
+
+
 our $user_agent = "Mozilla/4.76 [en] (Win98; U)";
 
 our $apiurl = "https://coinbase.com/api/v1";
 
-sub Conversion
+sub api
 {
-	my ($type) = @_;
-	return _apiprice($type);
+	my ($self, $func) = @_;
+
+	my $resp;
+	eval {
+		$resp = $self->{api}->$func;
+	};
+	if ($@) {
+		printf STDERR "api(%s): %s\n", $func, $@;
+		return undef;
+	}
+	if (!defined($resp)) {
+		return $resp;
+	}
+	if (! (ref($resp) eq "Net::HTTP::Spore::Response")) {
+		return undef;
+	}
+	return $resp->body;
 }
 
 ### Authenticated API calls
@@ -65,12 +77,11 @@ sub new
 		secret => ${$args}{'secret'},
 	};
 
-	unless ($self->{'apikey'} && $self->{'secret'})
-	{
-		croak "You must provide an apikey and secret";
-		return undef;
-	}
-
+	$self->{api} = Net::HTTP::Spore->new_from_spec('cb.json',
+		base_url => $apiurl);
+	$self->{api}->enable('Net::HTTP::Spore::Middleware::Format::JSON');
+	# $self->{api}->enable('Auth::HMACSHA512', key => $args->{'apikey'},
+	#    secret => $args->{$secret});
 
 	my $ret = bless $self, $class;
 	$self->set('user_agent', 'Windows IE 6');
@@ -102,53 +113,15 @@ sub _apikey
 	return $self->{'apikey'};
 }
 
-sub _apiget
-{
-	my ($url) = @_;
-	my $version = $user_agent;
-
-	my $browser = _newagent($version);
-	my $retrycount = 0;
-	retryapiget:
-	my $resp = $browser->get($url);
-	my $response = $resp->content;
-	my %info;
-	my $ret;
-	eval {
-		$ret = $json->decode($response);
-	};
-	if (ref($ret) eq "HASH") {
-		%info = %{$ret};
-	} else {
-		return $ret;
-	}
-	if ($@) {
-		if (_known_error($response)) {
-			if ($retrycount++ < 1) {
-				print STDERR "_apiget error";
-			}
-			print STDERR "!";
-			sleep(5+int($retrycount/3));
-			goto retryapiget;
-		}
-		printf STDERR "ApiGet(%s, %s): unhandled response = '%s'\n",
-			$version, $url, $response;
-		printf STDERR "ApiPrice(%s, %s): %s\n", $version, $url, $@;
-		my %i;
-		return \%i;
-	}
-	return \%info;
-}
-
 sub _apiprice
 {
-	my ($type) = @_;
+	my ($self, $type) = @_;
 	if (!defined($type)) {
 		my %i;
 		return  \%i;
 	}
 
-	my $ret = _apiget($apiurl."/prices/".$type);
+	my $ret = $self->_apiget($apiurl."/prices/".$type);
 	if (!defined($ret)) {
 		my %i;
 		return \%i;
@@ -193,7 +166,7 @@ sub _decode
 
 sub _known_error
 {
-	my ($string) = @_;
+	my ($self, $string) = @_;
 
 	my @known_errs = (
 			'Connection timed out',
@@ -216,6 +189,7 @@ sub _mech
 
 sub _newagent
 {
+	my ($self) = @_;
 	my $version = $user_agent;
 	my $agent = LWP::UserAgent->new(ssl_opts => {verify_hostname => 1}, env_proxy => 1);
 	if (defined($version)) {
@@ -252,7 +226,7 @@ sub _post
 		$self->_mech->request($req);
 	};
 	if ($@) {
-		if (_known_error($@)) {
+		if ($self->_known_error($@)) {
 			print STDERR "!";
 			if ($retrycount++ < 30) {
 				sleep(5+int($retrycount/3));

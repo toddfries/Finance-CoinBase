@@ -20,12 +20,11 @@ use warnings;
 use Term::ReadLine;
 
 eval {
-use Finance::CoinBase ':all';
+use Finance::CoinBase;
 };
 if ($@) {
 	printf STDERR "You need to install Finance::CoinBase\n";
 }
-use Data::Dumper;
 
 my ($apikey, $secret);
 
@@ -55,10 +54,8 @@ my $cb;
 
 if (!defined($apikey) || !defined($secret)) {
 	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
-} else {
-	$cb = Finance::CoinBase->new( { apikey => $apikey, secret => $secret, });
 }
-
+$cb = Finance::CoinBase->new( { apikey => $apikey, secret => $secret, });
 
 sub
 act
@@ -70,14 +67,13 @@ act
 	if (!defined($argv[0])) {
 		return;
 	}
-	if ($argv[0] eq "buyrate") {
-		$res = Conversion('buy');
-	} elsif ($argv[0] eq "quit") {
+	my $cmd = shift @argv;
+	if ($cmd =~ /(buyrate|spotrate|sellrate|currencies|currencyexchange)/) {
+		$res = $cb->api($cmd);
+	} elsif ($cmd eq "quit") {
 		exit(0);
-	} elsif ($argv[0] eq "sellrate") {
-		$res = Conversion('sellrate');
 	} else {
-		printf STDERR "Unimplemented method: '%s'\n", $argv[0];
+		printf STDERR "Unimplemented method: '%s'\n", $cmd;
 		return;
 	}
 
@@ -137,6 +133,13 @@ mydump
 			printf "%s '%s' => ", $indent.$ai, $k;
 			mydump($info->{$k}, $indent.$ai.$ai, $indent);
 		}
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "Net::HTTP::Spore::Response") {
+		print "Net::HTTP::Spore::Response {\n";
+		# check $info->status
+		mydump($info->body, $indent.$ai.$ai, $indent);
 		printf "%s},\n", substr($indent,0,length($indent)-5);;
 		return;
 	}

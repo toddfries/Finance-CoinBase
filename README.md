@@ -14,7 +14,11 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
-  blah blah blah
+  Moose
+  Net::HTTP::Spore
+  IO::All
+  MooseX::Types
+  MooseX::Types::URI
 
 COPYRIGHT AND LICENCE
 
