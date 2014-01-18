@@ -73,8 +73,8 @@ sub new
 
 	my $self = {
 		mech => WWW::Mechanize->new(stack_depth => 0, quiet=>0),
-		apikey => ${$args}{'apikey'},
-		secret => ${$args}{'secret'},
+		apikey => $args->{'apikey'},
+		secret => $args->{'secret'},
 	};
 
 	$self->{api} = Net::HTTP::Spore->new_from_spec('cb.json',
