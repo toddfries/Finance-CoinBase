@@ -28,7 +28,7 @@ if ($@) {
 
 my ($apikey, $secret);
 
-my $configfile = $ENV{'HOME'}."/.cb.conf";
+my $configfile = $ENV{'HOME'}."/.btce.conf";
 if (-f $configfile) {
 	open(CONFIG, $configfile);
 	while(<CONFIG>) {
@@ -50,13 +50,12 @@ if (-f $configfile) {
 	close(CONFIG);
 }
 
-my $cb;
-
 if (!defined($apikey) || !defined($secret)) {
 	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
 }
-$cb = Finance::CoinBase->new( {
-	apifile => "$ENV{'HOME'}/git/sw//api-description/services/coinbase.json",
+my $btce = Finance::CoinBase->new( {
+	apifile => "$ENV{'HOME'}/git/sw/api-description/services/btc-e.json",
+	keyname => 'Key',
 	apikey => $apikey,
 	secret => $secret,
     } );
@@ -74,8 +73,14 @@ act
 	my $cmd = shift @argv;
 	if ($cmd eq "quit") {
 		exit(0);
+	} elsif($cmd eq "fee") {
+		if (!defined($argv[0])) {
+			printf STDERR "Need an exchange arg\n";
+			return;
+		}
+		$res = $btce->api($cmd, {exchange => $argv[0] } );
 	} else {
-		$res = $cb->api($cmd);
+		$res = $btce->api($cmd);
 	}
 
 	if (!defined($res)) {
@@ -156,7 +161,7 @@ if (@ARGV) {
 my $term = Term::ReadLine->new('cb', *STDIN, *STDOUT);
 $term->ornaments(0);
 
-my $prompt = "cb> ";
+my $prompt = "btce> ";
 my $line;
 while (1)
 {
