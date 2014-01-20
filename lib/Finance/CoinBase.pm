@@ -37,6 +37,9 @@ sub api
 		}
 	};
 	if ($@) {
+		if (!defined($extra)) {
+			$extra = "";
+		}
 		printf STDERR "api: %s(%s) %s\n", $func, $extra, $@;
 		return undef;
 	}
@@ -69,8 +72,8 @@ sub new
 	}
 	$self->{api} = Net::HTTP::Spore->new_from_spec($apifile);
 	$self->{api}->enable('Net::HTTP::Spore::Middleware::Format::JSON');
-	if (0) {
 	$self->{api}->enable('Net::HTTP::Spore::Middleware::Auth::debug');
+	if (0) {
 	if (defined($args->{'apikey'}) && defined($args->{'secret'})) {
 		print STDERR "apikey && secret exist, enabling Auth::ApiKey\n";
 		$self->{api}->enable('Auth::ApiKey',

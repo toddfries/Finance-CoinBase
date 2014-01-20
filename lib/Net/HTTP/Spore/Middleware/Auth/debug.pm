@@ -14,9 +14,12 @@ extends 'Net::HTTP::Spore::Middleware::Auth';
 sub call {
     my ($self, $req) = @_;
 
-    open(TTY,">/dev/tty");
-    printf TTY "req = { %s }\n", $req->as_string;
-    close(TTY);
+    my $fh;
+    if (!open($fh, ">", "/dev/tty")) {
+	return;
+    }
+    printf $fh "req = { %s }\n", $req->as_string;
+    close($fh);
 }
 
 1;
