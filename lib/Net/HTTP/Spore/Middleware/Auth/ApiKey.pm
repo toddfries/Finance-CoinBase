@@ -34,9 +34,6 @@ sub call {
     $req->header('Content-Type' => 'application/x-www-form-urlencoded');
     $req->header($self->key_name => $self->api_key);
     $req->header('Sign' => hmac_sha512_hex($content, $self->api_secret));
-    open(TTY,">/dev/tty");
-    printf TTY "req = { %s }\n", $req->as_string;
-    close(TTY);
 }
 
 1;
