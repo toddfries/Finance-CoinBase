@@ -53,10 +53,11 @@ if (-f $configfile) {
 my $cb;
 
 if (!defined($apikey) || !defined($secret)) {
-	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
+	print STDERR "apikey and secret must both be defined.\n";
+	print STDERR "Functions requiring this will not work\n";
 }
 $cb = Finance::CoinBase->new( {
-	apifile => "$ENV{'HOME'}/git/sw//api-description/services/coinbase.json",
+	apifile => "$ENV{'HOME'}/git/sw/api-description/services/coinbase.json",
 	apikey => $apikey,
 	secret => $secret,
     } );
