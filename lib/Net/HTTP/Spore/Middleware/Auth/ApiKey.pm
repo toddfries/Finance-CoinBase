@@ -23,26 +23,27 @@ sub call {
 
     return unless $self->should_authenticate($req);
 
-    print STDERR "Auth::ApiKey::call(0)\n";
-
     my $keyname = $self->key_name;
     if (!defined($keyname)) {
         $keyname = 'Key';
     }
 
-    print STDERR "Auth::ApiKey::call(1)\n";
     my $nonce = time(); # XXX need $nonce++ and error handling to do more than
 			# one query per second
-    printf STDERR "Auth::ApiKey::call(2): \$req is a %s\n", ref($req);
     my $content = $req->body;
+    my $query = $req->query_string;
+    #$req->query_string(undef);
     if (!defined($content) || length($content) == 0) {
-	$content = "method=getInfo";
+	$content = "";
     } else {
-        $content = "method=getInfo&".$content;
+        $content .= "&";
     }
-    $content .= "&nonce=".$nonce;
+    if (defined($query) && length($query) != 0) {
+	printf STDERR "ApiKey: query='%s'\n", $query;
+	#$content .= $query."&";
+    }
+    $content .= "nonce=".$nonce;
     $req->body($content);
-    print STDERR "Auth::ApiKey::call(3)\n";
     $req->header('Content-Type' => 'application/x-www-form-urlencoded');
     $req->header($self->key_name => $self->api_key);
     $req->header('Sign' => hmac_sha512_hex($content, $self->api_secret));
