@@ -72,16 +72,14 @@ sub new
 	}
 	$self->{api} = Net::HTTP::Spore->new_from_spec($apifile);
 	$self->{api}->enable('Net::HTTP::Spore::Middleware::Format::JSON');
-	$self->{api}->enable('Net::HTTP::Spore::Middleware::Auth::debug');
-	if (0) {
 	if (defined($args->{'apikey'}) && defined($args->{'secret'})) {
 		print STDERR "apikey && secret exist, enabling Auth::ApiKey\n";
 		$self->{api}->enable('Auth::ApiKey',
-			keyname => $keyname,
+			key_name => $keyname,
         		api_key  => $args->{'apikey'},
         		api_secret => $args->{'secret'},
 		);
-	}
+		print STDERR "... success!\n";
 	}
 
 
