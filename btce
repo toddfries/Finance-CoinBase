@@ -17,12 +17,12 @@
 use strict;
 use warnings;
 
+use Try::Tiny;
 use Term::ReadLine;
 
-eval {
-use Finance::CoinBase;
-};
-if ($@) {
+try {
+	use Finance::CoinBase;
+} catch {
 	printf STDERR "You need to install Finance::CoinBase\n";
 }
 
@@ -78,9 +78,9 @@ act
 			printf STDERR "Need an exchange arg\n";
 			return;
 		}
-		$res = $btce->api($cmd, {exchange => $argv[0] } );
+		$res = $btce->api($cmd, {exchange => $argv[0]} );
 	} else {
-		$res = $btce->api($cmd);
+		$res = $btce->api($cmd, {method => $cmd });
 	}
 
 	if (!defined($res)) {
