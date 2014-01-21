@@ -1,0 +1,173 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2014 Todd T. Fries <todd@fries.net>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+use strict;
+use warnings;
+
+use Try::Tiny;
+use Term::ReadLine;
+
+try {
+	use Finance::CoinBase;
+} catch {
+	printf STDERR "You need to install Finance::CoinBase\n";
+}
+
+my ($apikey, $secret);
+
+my $configfile = $ENV{'HOME'}."/.bter.conf";
+if (-f $configfile) {
+	open(CONFIG, $configfile);
+	while(<CONFIG>) {
+		my $line;
+		chomp($line = $_);
+		if ($line =~ /^([a-z]+)\s*=\s*(.*)$/) {
+			my ($var,$val) = ($1,$2);
+			$val =~ s/#.*$//g;
+			if ($var eq "apikey") {
+				$apikey = $val;
+			} elsif ($var eq "secret") {
+				$secret = $val;
+			} else {
+				printf STDERR "Unrecognized: '%s' = '%s'\n",
+				    $var, $val;
+			}
+		}
+	}
+	close(CONFIG);
+}
+
+if (!defined($apikey) || !defined($secret)) {
+	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
+}
+my $bter = Finance::CoinBase->new( {
+	apifile => "$ENV{'HOME'}/git/sw/api-description/services/bter.json",
+	keyname => 'Key',
+	apikey => $apikey,
+	secret => $secret,
+    } );
+
+sub
+act
+{
+	my (@argv) = @_;
+	my %result;
+	my @resultkeys;
+	my $res;
+	if (!defined($argv[0])) {
+		return;
+	}
+	my $cmd = shift @argv;
+	if ($cmd eq "quit") {
+		exit(0);
+	} elsif($cmd eq "ticker") {
+		if (!defined($argv[1])) {
+			printf STDERR "Need two currencies as argsn";
+			return;
+		}
+		$res = $bter->api($cmd, {cura => $argv[0], curb => $argv[1]} );
+	} else {
+		$res = $bter->api($cmd);
+	}
+
+	if (!defined($res)) {
+		print "<undef>\n";
+		return;
+	}
+
+	print mydump($res);
+	return;
+	apikeywarn:
+	printf STDERR "%s requires an api key, noop\n", $argv[0];
+}
+
+sub
+mydump
+{
+	my ($info, $indent, $oindent) = @_;
+
+	my $ai = "    ";
+
+	if (!defined($indent)) {
+		$indent = "";
+	}
+	if (!defined($oindent)) {
+		$oindent = "";
+	}
+	if (!defined($info)) {
+		$info = "<undef>";
+	}
+
+	my $type = ref($info);
+
+	unless ($type) {
+		printf " %s\n", $info;
+		return;
+	}
+
+	if ($type eq "ARRAY") {
+		printf "ARRAY (\n";
+		foreach my $a (@{$info}) {
+			print $indent;
+			mydump($a, $indent.$ai, $indent);
+		}
+		printf "%s),\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "HASH") {
+		print "HASH {";
+		my @keylist = keys %{$info};
+		if (! @keylist || $#keylist < 0) {
+			print " <empty> }\n";
+			return;
+		}
+		print "\n";
+		foreach my $k (keys %{$info}) {
+			printf "%s '%s' => ", $indent.$ai, $k;
+			mydump($info->{$k}, $indent.$ai.$ai, $indent);
+		}
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "Net::HTTP::Spore::Response") {
+		print "Net::HTTP::Spore::Response {\n";
+		# check $info->status
+		mydump($info->body, $indent.$ai.$ai, $indent);
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	printf "%s %s (unhandled)\n", $indent, $type;
+	return;
+}
+
+if (@ARGV) {
+	act( @ARGV );
+	exit(0);
+}
+
+my $term = Term::ReadLine->new('cb', *STDIN, *STDOUT);
+$term->ornaments(0);
+
+my $prompt = "bter> ";
+my $line;
+while (1)
+{
+	chomp($line = $term->readline($prompt));
+	if (!defined($line)) {
+		exit(0);
+	}
+	act( split(/[ ]+/,$line) );
+}

@@ -20,6 +20,12 @@ This module requires these other modules and libraries:
   MooseX::Types
   MooseX::Types::URI
 
+NOTES
+
+This module needs a new name.  Using the .json files from
+api-description it provides enough functionality to sign in
+to various apis.  Suggestionsed welcome!
+
 COPYRIGHT AND LICENCE
 
 Put the correct copyright and licence information here.
