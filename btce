@@ -73,7 +73,7 @@ act
 	my $cmd = shift @argv;
 	if ($cmd eq "quit") {
 		exit(0);
-	} elsif($cmd eq "fee") {
+	} elsif($cmd =~ /^(fee|ticker|trades|depth)$/) {
 		if (!defined($argv[0])) {
 			printf STDERR "Need an exchange arg\n";
 			return;
