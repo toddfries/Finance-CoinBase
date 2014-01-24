@@ -19,9 +19,6 @@ use strict;
 use warnings;
 use Net::HTTP::Spore;
 
-#use Digest::SHA qw(hmac_sha512_hex);
-#use MIME::Base64;
-
 our $VERSION = '0.0';
 
 sub api
@@ -72,6 +69,7 @@ sub new
 	}
 	$self->{api} = Net::HTTP::Spore->new_from_spec($apifile);
 	$self->{api}->enable('Net::HTTP::Spore::Middleware::Format::JSON');
+	#$self->{api}->enable( 'Redirection', max_redirect => 5 );
 	if (defined($args->{'apikey'}) && defined($args->{'secret'})) {
 		print STDERR "apikey && secret exist, enabling Auth::ApiKey\n";
 		$self->{api}->enable('Auth::ApiKey',
@@ -82,17 +80,10 @@ sub new
 		print STDERR "... success!\n";
 	}
 
-
-	# $self->{api}->enable('Auth::HMACSHA512', key => $args->{'apikey'},
-	#    secret => $args->{$secret});
-
 	my $ret = bless $self, $class;
 
 	return $ret;
 }
-
-#private methods
-
 
 1;
 __END__
@@ -100,7 +91,7 @@ __END__
 
 =head1 NAME
 
-Finance::CoinBase - Perl extension for interfacing with the BTC-e bitcoin exchange
+Finance::CoinBase - Perl extension for interfacing with the CoinBase bitcoin exchange
 
 =head1 Version
 
@@ -111,17 +102,12 @@ Version 0.01
   use Finance::CoinBase;
 
   my $CoinBase = Finance::CoinBase->new({apikey => 'key',
-	secret => 'secret',});
+	secret => 'secret', keyname => 'api_key' });
 
   #public API calls
 
   #Prices for Bitcoin to USD
-  my %price = %{Conversion('sell')};
-
-  #Prices for USD to Bitcoin
-  my %price = %{Conversion('buy')};
-
-  #Authenticated API Calls
+  my %price = $CoinBase->api('buyrate');
 
 =head2 EXPORT
 
@@ -151,5 +137,9 @@ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Donations (not required or requested, but incase desired..):
+
+For Todd T. Fries BTC 1Bv3F86y2Vpj8fcV2ZU4EwhDuMiaYDswy7
 
 =cut
