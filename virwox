@@ -72,12 +72,12 @@ act
 	my $cmd = shift @argv;
 	if ($cmd eq "quit") {
 		exit(0);
-	} elsif($cmd eq "ticker") {
-		if (!defined($argv[1])) {
-			printf STDERR "Need two currencies as argsn";
+	} elsif($cmd eq "getBestPrices") {
+		if (!defined($argv[0])) {
+			printf STDERR "Need symbols";
 			return;
 		}
-		$res = $virwox->api($cmd, {cura => $argv[0], curb => $argv[1]} );
+		$res = $virwox->api($cmd, {method => $cmd, params => undef, symbols => ( @argv ) , id => 1});
 	} else {
 		$res = $virwox->api($cmd, {method => $cmd, params => undef, id => 1} );
 	}
