@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+
+# Copyright (c) 2014 Todd T. Fries <todd@fries.net>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+use strict;
+use warnings;
+
+use Term::ReadLine;
+
+eval {
+use Finance::CoinBase;
+};
+if ($@) {
+	printf STDERR "You need to install Finance::CoinBase\n";
+}
+
+our ($id, $secret);
+
+my $configfile = $ENV{'HOME'}."/.cryptsy.conf";
+if (-f $configfile) {
+	open(CONFIG, $configfile);
+	while(<CONFIG>) {
+		my $line;
+		chomp($line = $_);
+		if ($line =~ /^([a-z]+)\s*=\s*(.*)$/) {
+			my ($var,$val) = ($1,$2);
+			$val =~ s/#.*$//g;
+			if ($var eq "id") {
+				$id = $val;
+			} elsif ($var eq "secret") {
+				$secret = $val;
+			} else {
+				printf STDERR "Unrecognized: '%s' = '%s'\n",
+				    $var, $val;
+			}
+		}
+	}
+	close(CONFIG);
+}
+
+my $cryptsy;
+
+if (!defined($id) || !defined($secret)) {
+	print STDERR "id and secret must both be defined.\n";
+	print STDERR "Functions requiring this will not work\n";
+}
+$cryptsy = Finance::CoinBase->new( {
+	apifile => "$ENV{'HOME'}/git/sw/api-description/services/cryptsy.json",
+    } );
+
+our $authenabled = 0;
+
+sub
+enableauth
+{
+	if (!defined($id) || !defined($secret)) {
+		print STDERR "id and secret must both be defined.\n";
+		print STDERR "This function will fail.\n";
+		return;
+	}
+	if ($authenabled) {
+		return;
+	}
+	$authenabled = 1;
+	my $authret = $cryptsy->{api}->enable(
+	    'Auth::OAuth',
+	    consumer_key    => $id,
+	    consumer_secret => $secret,
+	);
+	$cryptsy->dumpit($authret);
+}
+
+sub
+act
+{
+	my (@argv) = @_;
+	my %result;
+	my @resultkeys;
+	my $res;
+	if (!defined($argv[0])) {
+		return;
+	}
+	my $cmd = shift @argv;
+	if ($cmd eq "quit") {
+		exit(0);
+	} elsif ($cmd eq "singlemarketdata") {
+		$res = $cryptsy->api($cmd, { method => $cmd, marketid => $argv[0]});
+	} else {
+		$res = $cryptsy->api($cmd, { method => $cmd });
+	}
+
+	if (!defined($res)) {
+		print "<undef>\n";
+		return;
+	}
+
+	$cryptsy->dumpit($res);
+	return;
+	apikeywarn:
+	printf STDERR "%s requires an api key, noop\n", $argv[0];
+}
+
+if (@ARGV) {
+	act( @ARGV );
+	exit(0);
+}
+
+my $term = Term::ReadLine->new('cb', *STDIN, *STDOUT);
+$term->ornaments(0);
+
+my $prompt = "cryptsy> ";
+my $line;
+while (1)
+{
+	chomp($line = $term->readline($prompt));
+	if (!defined($line)) {
+		exit(0);
+	}
+	act( split(/[ ]+/,$line) );
+}
