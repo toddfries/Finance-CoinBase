@@ -26,7 +26,7 @@ if ($@) {
 	printf STDERR "You need to install Finance::CoinBase\n";
 }
 
-my ($apikey, $secret);
+our ($id, $secret);
 
 my $configfile = $ENV{'HOME'}."/.cb.conf";
 if (-f $configfile) {
@@ -37,8 +37,8 @@ if (-f $configfile) {
 		if ($line =~ /^([a-z]+)\s*=\s*(.*)$/) {
 			my ($var,$val) = ($1,$2);
 			$val =~ s/#.*$//g;
-			if ($var eq "apikey") {
-				$apikey = $val;
+			if ($var eq "id") {
+				$id = $val;
 			} elsif ($var eq "secret") {
 				$secret = $val;
 			} else {
@@ -52,15 +52,47 @@ if (-f $configfile) {
 
 my $cb;
 
-if (!defined($apikey) || !defined($secret)) {
-	print STDERR "apikey and secret must both be defined.\n";
+if (!defined($id) || !defined($secret)) {
+	print STDERR "id and secret must both be defined.\n";
 	print STDERR "Functions requiring this will not work\n";
+} elsif(0) {
+	use URI;
+	my $uri = URI->new('https://coinbase.com/api/v1');
+	$uri->path('oauth/authorize');
+	my %query = (
+		client_id => $id,
+		redirect_uri => print,
+		response_type => 'code',
+	);
+	$uri->query_form(%query);
+	print $uri->as_string;
+	exit(0);
 }
 $cb = Finance::CoinBase->new( {
 	apifile => "$ENV{'HOME'}/git/sw/api-description/services/coinbase.json",
-	apikey => $apikey,
-	secret => $secret,
     } );
+
+our $authenabled = 0;
+
+sub
+enableauth
+{
+	if (!defined($id) || !defined($secret)) {
+		print STDERR "id and secret must both be defined.\n";
+		print STDERR "This function will fail.\n";
+		return;
+	}
+	if ($authenabled) {
+		return;
+	}
+	$authenabled = 1;
+	my $authret = $cb->{api}->enable(
+	    'Auth::OAuth',
+	    consumer_key    => $id,
+	    consumer_secret => $secret,
+	);
+	print mydump($authret);
+}
 
 sub
 act
@@ -75,6 +107,10 @@ act
 	my $cmd = shift @argv;
 	if ($cmd eq "quit") {
 		exit(0);
+	} elsif ($cmd eq "button") {
+		enableauth();
+		$res = $cb->api($cmd, { name => "Test",
+		    price_string => "2600", price_currency_iso => "USD" });
 	} else {
 		$res = $cb->api($cmd);
 	}
