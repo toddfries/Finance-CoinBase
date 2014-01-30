@@ -26,9 +26,15 @@ if ($@) {
 	printf STDERR "You need to install Finance::CoinBase\n";
 }
 
+our $personality = shift @ARGV;
+if (!defined($personality)) {
+	print STDERR "cli requires the personality arg at a mimimum\n";
+	exit(1);
+}
+
 our ($id, $secret);
 
-my $configfile = $ENV{'HOME'}."/.cb.conf";
+my $configfile = $ENV{'HOME'}."/.".$personality.".conf";
 if (-f $configfile) {
 	open(CONFIG, $configfile);
 	while(<CONFIG>) {
@@ -50,7 +56,7 @@ if (-f $configfile) {
 	close(CONFIG);
 }
 
-my $cb;
+my $spore;
 
 if (!defined($id) || !defined($secret)) {
 	print STDERR "id and secret must both be defined.\n";
@@ -68,11 +74,60 @@ if (!defined($id) || !defined($secret)) {
 	print $uri->as_string;
 	exit(0);
 }
-$cb = Finance::CoinBase->new( {
-	apifile => "$ENV{'HOME'}/git/sw/api-description/services/coinbase.json",
-    } );
+
+
+my $apifile = $ENV{'HOME'}."/git/sw/api-description/services/".$personality.".json";
+
+if (! -f $apifile) {
+	printf STDERR "apifile '%s' not found, bailing\n", $apifile;
+	exit(1);
+}
+
+$spore = Finance::CoinBase->new( { apifile => $apifile } );
+
+our $fun = { };
+
+$fun->{coinbase}->{button}->{func} = "cbutton";
+$fun->{coinbase}->{button}->{auth} = 1;
+sub cbutton {
+	my ($spore, $cmd, @argv) = @_;
+	printf STDERR "my cmd = %s\n", $cmd;
+	return $spore->api($cmd, {
+		name => "Test",
+		price_string => "2600",
+		price_currency_iso => "USD"
+	});
+}
+
+$fun->{bter}->{ticker}->{func} = "bticker";
+sub bticker {
+	my ($spore, $cmd, @argv) = @_;
+	return $spore->api($cmd, {
+		cura => $argv[0],
+		curb => $argv[1]
+	});
+}
 
 our $authenabled = 0;
+
+if (@ARGV) {
+	act( @ARGV );
+	exit(0);
+}
+
+my $term = Term::ReadLine->new($personality, *STDIN, *STDOUT);
+$term->ornaments(0);
+
+my $prompt = $personality."> ";
+my $line;
+while (1)
+{
+	chomp($line = $term->readline($prompt));
+	if (!defined($line)) {
+		exit(0);
+	}
+	act( split(/[ ]+/,$line) );
+}
 
 sub
 enableauth
@@ -86,12 +141,12 @@ enableauth
 		return;
 	}
 	$authenabled = 1;
-	my $authret = $cb->{api}->enable(
+	my $authret = $spore->{api}->enable(
 	    'Auth::OAuth',
 	    consumer_key    => $id,
 	    consumer_secret => $secret,
 	);
-	$cb->dumpit($authret);
+	$spore->dumpit($authret);
 }
 
 sub
@@ -105,14 +160,21 @@ act
 		return;
 	}
 	my $cmd = shift @argv;
-	if ($cmd eq "quit") {
+	my $func = $fun->{$personality}->{$cmd}->{func};
+	if (defined($func)) {
+		my $auth = $fun->{$personality}->{auth};
+		if (defined($auth) && $fun->{$personality}->{auth} == 1) {
+			enableauth();
+		}
+		eval "\$res = ${func}(\$spore, \$cmd, \@argv)";
+	} elsif ($cmd eq "quit") {
 		exit(0);
 	} elsif ($cmd eq "button") {
 		enableauth();
-		$res = $cb->api($cmd, { name => "Test",
+		$res = $spore->api($cmd, { name => "Test",
 		    price_string => "2600", price_currency_iso => "USD" });
 	} else {
-		$res = $cb->api($cmd);
+		$res = $spore->api($cmd);
 	}
 
 	if (!defined($res)) {
@@ -120,27 +182,8 @@ act
 		return;
 	}
 
-	$cb->dumpit($res);
+	$spore->dumpit($res);
 	return;
 	apikeywarn:
 	printf STDERR "%s requires an api key, noop\n", $argv[0];
-}
-
-if (@ARGV) {
-	act( @ARGV );
-	exit(0);
-}
-
-my $term = Term::ReadLine->new('cb', *STDIN, *STDOUT);
-$term->ornaments(0);
-
-my $prompt = "cb> ";
-my $line;
-while (1)
-{
-	chomp($line = $term->readline($prompt));
-	if (!defined($line)) {
-		exit(0);
-	}
-	act( split(/[ ]+/,$line) );
 }
