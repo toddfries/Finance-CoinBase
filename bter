@@ -88,69 +88,10 @@ act
 		return;
 	}
 
-	print mydump($res);
+	$bter->dumpit($res);
 	return;
 	apikeywarn:
 	printf STDERR "%s requires an api key, noop\n", $argv[0];
-}
-
-sub
-mydump
-{
-	my ($info, $indent, $oindent) = @_;
-
-	my $ai = "    ";
-
-	if (!defined($indent)) {
-		$indent = "";
-	}
-	if (!defined($oindent)) {
-		$oindent = "";
-	}
-	if (!defined($info)) {
-		$info = "<undef>";
-	}
-
-	my $type = ref($info);
-
-	unless ($type) {
-		printf " %s\n", $info;
-		return;
-	}
-
-	if ($type eq "ARRAY") {
-		printf "ARRAY (\n";
-		foreach my $a (@{$info}) {
-			print $indent;
-			mydump($a, $indent.$ai, $indent);
-		}
-		printf "%s),\n", substr($indent,0,length($indent)-5);;
-		return;
-	}
-	if ($type eq "HASH") {
-		print "HASH {";
-		my @keylist = keys %{$info};
-		if (! @keylist || $#keylist < 0) {
-			print " <empty> }\n";
-			return;
-		}
-		print "\n";
-		foreach my $k (keys %{$info}) {
-			printf "%s '%s' => ", $indent.$ai, $k;
-			mydump($info->{$k}, $indent.$ai.$ai, $indent);
-		}
-		printf "%s},\n", substr($indent,0,length($indent)-5);;
-		return;
-	}
-	if ($type eq "Net::HTTP::Spore::Response") {
-		print "Net::HTTP::Spore::Response {\n";
-		# check $info->status
-		mydump($info->body, $indent.$ai.$ai, $indent);
-		printf "%s},\n", substr($indent,0,length($indent)-5);;
-		return;
-	}
-	printf "%s %s (unhandled)\n", $indent, $type;
-	return;
 }
 
 if (@ARGV) {
