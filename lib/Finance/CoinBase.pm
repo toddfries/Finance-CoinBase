@@ -37,7 +37,12 @@ sub api
 		if (!defined($extra)) {
 			$extra = "";
 		}
-		printf STDERR "api: %s(%s) %s\n", $func, $extra, $@;
+		if (ref($extra) eq "HASH") {
+			printf STDERR "api: %s(HASH) %s\n", $func, $@;
+			print STDERR $self->dumpit($extra);
+		} else {
+			printf STDERR "api: %s(%s) %s\n", $func, $extra, $@;
+		}
 		return undef;
 	}
 	if (!defined($resp)) {
@@ -83,6 +88,65 @@ sub new
 	my $ret = bless $self, $class;
 
 	return $ret;
+}
+
+
+sub dumpit
+{
+	my ($self, $info, $indent, $oindent) = @_;
+
+	my $ai = "    ";
+
+	if (!defined($indent)) {
+		$indent = "";
+	}
+	if (!defined($oindent)) {
+		$oindent = "";
+	}
+	if (!defined($info)) {
+		$info = "<undef>";
+	}
+
+	my $type = ref($info);
+
+	unless ($type) {
+		printf " %s\n", $info;
+		return;
+	}
+
+	if ($type eq "ARRAY") {
+		printf "ARRAY (\n";
+		foreach my $a (@{$info}) {
+			print $indent;
+			$self->dumpit($a, $indent.$ai, $indent);
+		}
+		printf "%s),\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "HASH") {
+		print "HASH {";
+		my @keylist = keys %{$info};
+		if (! @keylist || $#keylist < 0) {
+			print " <empty> }\n";
+			return;
+		}
+		print "\n";
+		foreach my $k (keys %{$info}) {
+			printf "%s '%s' => ", $indent.$ai, $k;
+			$self->dumpit($info->{$k}, $indent.$ai.$ai, $indent);
+		}
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	if ($type eq "Net::HTTP::Spore::Response") {
+		print "Net::HTTP::Spore::Response {\n";
+		# check $info->status
+		$self->dumpit($info->body, $indent.$ai.$ai, $indent);
+		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		return;
+	}
+	printf "%s %s (unhandled)\n", $indent, $type;
+	return;
 }
 
 1;
