@@ -109,21 +109,33 @@ sub bticker {
 }
 
 $fun->{virwox}->{getBestPrices}->{func} = "vsymbols";
+$fun->{virwox}->{getMarketDepth}->{func} = "vsymbols";
 sub vsymbols {
 	my ($spore, $cmd, @argv) = @_;
 
 	if (!defined($argv[0])) {
-		printf STDERR "Need symbols";
+		printf STDERR "Need symbols for '%s'\n",$cmd;
 		return;
 	}
+
+	my $listname;
 	my %parms;
+	if ($cmd eq "getBestPrices") {
+		$listname = "symbols";
+	} elsif ($cmd eq "getMarketDepth") {
+		$listname = "symbols";
+		#$listname = "instruments";
+		$parms{'buyDepth'} = 5;
+		$parms{'sellDepth'} = 5;
+	} else {
+		print STDERR "unhandled: '%s'\n",$cmd;
+		return;
+	}
 	$parms{'id'} = 1;
 	$parms{'method'} = $cmd;
-	$parms{'buyDepth'} = 1;
-	$parms{'sellDepth'} = 1;
 	my $i=0;
 	foreach my $arg (@argv) {
-		my $sym = "symbols%5b".$i++."%5d";
+		my $sym = $listname."%5b".$i++."%5d";
 		$parms{$sym} = $arg;
 	}
 	return $spore->api($cmd, { %parms });
