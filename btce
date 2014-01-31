@@ -54,7 +54,7 @@ if (!defined($apikey) || !defined($secret)) {
 	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
 }
 my $btce = Finance::CoinBase->new( {
-	apifile => "$ENV{'HOME'}/git/sw/api-description/services/btc-e.json",
+	apifile => "$ENV{'HOME'}/git/sw/api-description/services/btce.json",
 	keyname => 'Key',
 	apikey => $apikey,
 	secret => $secret,
