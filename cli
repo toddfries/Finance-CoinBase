@@ -43,7 +43,7 @@ if (-f $configfile) {
 		if ($line =~ /^([a-z]+)\s*=\s*(.*)$/) {
 			my ($var,$val) = ($1,$2);
 			$val =~ s/#.*$//g;
-			if ($var eq "id") {
+			if ($var eq "id" || $var eq "apikey") {
 				$id = $val;
 			} elsif ($var eq "secret") {
 				$secret = $val;
@@ -86,6 +86,9 @@ if (! -f $apifile) {
 $spore = Finance::CoinBase->new( { apifile => $apifile } );
 
 our $fun = { };
+
+# {auth} = 1 -> OAuth
+# {auth} = 2 -> apikey/apisecret
 
 $fun->{coinbase}->{button}->{func} = "cbutton";
 $fun->{coinbase}->{button}->{auth} = 1;
@@ -140,6 +143,21 @@ sub vsymbols {
 	}
 	return $spore->api($cmd, { %parms });
 }
+
+$fun->{btce}->{fee}->{func} = "bexchange";
+$fun->{btce}->{ticker}->{func} = "bexchange";
+$fun->{btce}->{trades}->{func} = "bexchange";
+$fun->{btce}->{depth}->{func} = "bexchange";
+$fun->{btce}->{getInfo}->{auth} = 2;
+sub bexchange {
+	my ($spore, $cmd, @argv) = @_;
+
+	if (!defined($argv[0])) {
+		print STDERR "Need an exchange arg\n";
+		return;
+	}
+	return $spore->api($cmd, {method => $cmd, exchange => $argv[0]});
+}
 		
 our $authenabled = 0;
 
@@ -165,6 +183,7 @@ while (1)
 sub
 enableauth
 {
+	my ($type) = @_;
 	if (!defined($id) || !defined($secret)) {
 		print STDERR "id and secret must both be defined.\n";
 		print STDERR "This function will fail.\n";
@@ -173,12 +192,29 @@ enableauth
 	if ($authenabled) {
 		return;
 	}
+	if (!defined($type)) {
+		print STDERR "Must define type of auth\n";
+		return;
+	}
 	$authenabled = 1;
-	my $authret = $spore->{api}->enable(
-	    'Auth::OAuth',
-	    consumer_key    => $id,
-	    consumer_secret => $secret,
-	);
+	my $authret;
+	if ($type == 1) {
+		$authret = $spore->{api}->enable(
+	    	    'Auth::OAuth',
+	    	    consumer_key    => $id,
+	    	    consumer_secret => $secret,
+		);
+	} elsif ($type == 2) {
+		$authret = $spore->{api}->enable(
+		    'Auth::ApiKey',
+                    key_name => 'Key',
+                    api_key  => $id,
+                    api_secret => $secret,
+		);
+        } else {
+		printf STDERR "Unknown auth type: %s\n", $type;
+		return;
+	}
 	$spore->dumpit($authret);
 }
 
@@ -193,21 +229,18 @@ act
 		return;
 	}
 	my $cmd = shift @argv;
+	my $auth = $fun->{$personality}->{$cmd}->{auth};
+	if (defined($auth) && $auth > 0) {
+		enableauth($auth);
+	}
 	my $func = $fun->{$personality}->{$cmd}->{func};
 	if (defined($func)) {
-		my $auth = $fun->{$personality}->{auth};
-		if (defined($auth) && $fun->{$personality}->{auth} == 1) {
-			enableauth();
-		}
 		eval "\$res = ${func}(\$spore, \$cmd, \@argv)";
 	} elsif ($cmd eq "quit") {
 		exit(0);
-	} elsif ($cmd eq "button") {
-		enableauth();
-		$res = $spore->api($cmd, { name => "Test",
-		    price_string => "2600", price_currency_iso => "USD" });
 	} else {
-		$res = $spore->api($cmd);
+		printf STDERR "spore->api('%s', {method => '%s'})\n", $cmd, $cmd;
+		$res = $spore->api($cmd, {method => $cmd});
 	}
 
 	if (!defined($res)) {
