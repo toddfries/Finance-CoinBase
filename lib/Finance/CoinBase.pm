@@ -73,7 +73,7 @@ sub new
 		$keyname = 'Key';
 	}
 	$self->{api} = Net::HTTP::Spore->new_from_spec($apifile);
-	$self->{api}->enable('Net::HTTP::Spore::Middleware::Format::JSON');
+	$self->{api}->enable('Format::JSON');
 	#$self->{api}->enable( 'Redirection', max_redirect => 5 );
 	if (defined($args->{'apikey'}) && defined($args->{'secret'})) {
 		print STDERR "apikey && secret exist, enabling Auth::ApiKey\n";
