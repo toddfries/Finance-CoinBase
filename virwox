@@ -77,7 +77,18 @@ act
 			printf STDERR "Need symbols";
 			return;
 		}
-		$res = $virwox->api($cmd, {method => $cmd, params => undef, symbols => ( @argv ) , id => 1});
+		my %parms;
+		$parms{'id'} = 1;
+		$parms{'method'} = $cmd;
+		$parms{'buyDepth'} = 1;
+		$parms{'sellDepth'} = 1;
+		my $i=0;
+		foreach my $arg (@argv) {
+			my $sym = "symbols%5b".$i++."%5d";
+			$parms{$sym} = $arg;
+		}
+		#$res = $virwox->{api}->$cmd(method => $cmd, symbols => $arg);
+		$res = $virwox->api($cmd, { %parms });
 	} else {
 		$res = $virwox->api($cmd, {method => $cmd, params => undef, id => 1} );
 	}
