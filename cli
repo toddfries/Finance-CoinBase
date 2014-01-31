@@ -108,6 +108,27 @@ sub bticker {
 	});
 }
 
+$fun->{virwox}->{getBestPrices}->{func} = "vsymbols";
+sub vsymbols {
+	my ($spore, $cmd, @argv) = @_;
+
+	if (!defined($argv[0])) {
+		printf STDERR "Need symbols";
+		return;
+	}
+	my %parms;
+	$parms{'id'} = 1;
+	$parms{'method'} = $cmd;
+	$parms{'buyDepth'} = 1;
+	$parms{'sellDepth'} = 1;
+	my $i=0;
+	foreach my $arg (@argv) {
+		my $sym = "symbols%5b".$i++."%5d";
+		$parms{$sym} = $arg;
+	}
+	return $spore->api($cmd, { %parms });
+}
+		
 our $authenabled = 0;
 
 if (@ARGV) {
