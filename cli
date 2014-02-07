@@ -158,7 +158,17 @@ sub bexchange {
 	}
 	return $spore->api($cmd, {method => $cmd, exchange => $argv[0]});
 }
-		
+
+$fun->{voipms}->{getBalance}->{func} = "vmscall";
+#$fun->{voipms}->{getBalance}->{auth} = 2;
+#$fun->{voipms}->{keyname} = 'api_username';
+#$fun->{voipms}->{secname} = 'api_password';
+
+sub vmscall {
+	my ($spore, $cmd, @argv) = @_;
+
+	return $spore->api($cmd, {method => $cmd, api_username => $id, api_password => $secret});
+}
 our $authenabled = 0;
 
 if (@ARGV) {
@@ -183,7 +193,8 @@ while (1)
 sub
 enableauth
 {
-	my ($type) = @_;
+	my ($cmd) = @_;
+	my $type = $fun->{$personality}->{$cmd}->{auth};
 	if (!defined($id) || !defined($secret)) {
 		print STDERR "id and secret must both be defined.\n";
 		print STDERR "This function will fail.\n";
@@ -205,9 +216,13 @@ enableauth
 	    	    consumer_secret => $secret,
 		);
 	} elsif ($type == 2) {
+		my $keyname = $fun->{$personality}->{keyname};
+		if (!defined($keyname)) {
+			$keyname = 'Key';
+		}
 		$authret = $spore->{api}->enable(
 		    'Auth::ApiKey',
-                    key_name => 'Key',
+                    key_name => $keyname,
                     api_key  => $id,
                     api_secret => $secret,
 		);
