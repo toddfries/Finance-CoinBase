@@ -38,10 +38,11 @@ sub api
 			$extra = "";
 		}
 		if (ref($extra) eq "HASH") {
-			printf STDERR "api: %s(HASH) %s\n", $func, $@;
-			print STDERR $self->dumpit($extra);
+			printf STDERR "api: %s(HASH) failed: %s\n", $func, $@;
+			$self->dumpit($extra);
 		} else {
-			printf STDERR "api: %s(%s) %s\n", $func, $extra, $@;
+			printf STDERR "api: %s(%s) failed: %s\n", $func,
+			    $extra, $@;
 		}
 		return undef;
 	}
@@ -95,42 +96,48 @@ sub dumpit
 	my $type = ref($info);
 
 	unless ($type) {
-		printf " %s\n", $info;
+		printf STDERR " %s\n", $info;
 		return;
 	}
 
 	if ($type eq "ARRAY") {
-		printf "ARRAY (\n";
+		printf STDERR "ARRAY (\n";
 		foreach my $a (@{$info}) {
-			print $indent;
+			print STDERR $indent;
 			$self->dumpit($a, $indent.$ai, $indent);
 		}
-		printf "%s),\n", substr($indent,0,length($indent)-5);;
+		printf STDERR "%s),\n", substr($indent,0,length($indent)-5);;
 		return;
 	}
 	if ($type eq "HASH") {
-		print "HASH {";
+		print STDERR "HASH {";
 		my @keylist = keys %{$info};
 		if (! @keylist || $#keylist < 0) {
-			print " <empty> }\n";
+			print STDERR " <empty> }\n";
 			return;
 		}
-		print "\n";
+		print STDERR "\n";
 		foreach my $k (keys %{$info}) {
-			printf "%s '%s' => ", $indent.$ai, $k;
+			printf STDERR "%s '%s' => ", $indent.$ai, $k;
 			$self->dumpit($info->{$k}, $indent.$ai.$ai, $indent);
 		}
-		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		printf STDERR "%s},\n", substr($indent,0,length($indent)-5);;
 		return;
 	}
 	if ($type eq "Net::HTTP::Spore::Response") {
-		print "Net::HTTP::Spore::Response {\n";
+		print STDERR "Net::HTTP::Spore::Response {\n";
 		# check $info->status
 		$self->dumpit($info->body, $indent.$ai.$ai, $indent);
-		printf "%s},\n", substr($indent,0,length($indent)-5);;
+		printf STDERR "%s},\n", substr($indent,0,length($indent)-5);;
 		return;
 	}
-	printf "%s %s (unhandled)\n", $indent, $type;
+	use Data::Dumper;
+	$Data::Dumepr::Indent = 3;
+	$Data::Dumper::Purity = 1;
+	$Data::Dumper::Pad = $indent;
+	$Data::Dumper::Deepcopy = 1;
+	$Data::Dumper::Deparse = 1;
+	print STDERR Data::Dumper->Dump([$type], [qw(type)]);
 	return;
 }
 
