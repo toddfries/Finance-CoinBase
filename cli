@@ -149,6 +149,8 @@ $fun->{btce}->{ticker}->{func} = "bexchange";
 $fun->{btce}->{trades}->{func} = "bexchange";
 $fun->{btce}->{depth}->{func} = "bexchange";
 $fun->{btce}->{getInfo}->{auth} = 2;
+$fun->{btce}->{TransHistory}->{auth} = 2;
+$fun->{btce}->{ActiveOrders}->{auth} = 2;
 sub bexchange {
 	my ($spore, $cmd, @argv) = @_;
 
@@ -156,7 +158,7 @@ sub bexchange {
 		print STDERR "Need an exchange arg\n";
 		return;
 	}
-	return $spore->api($cmd, {method => $cmd, exchange => $argv[0]});
+	return $spore->api($cmd, {exchange => $argv[0]});
 }
 
 $fun->{voipms}->{getBalance}->{func} = "vmscall";
@@ -246,7 +248,7 @@ act
 	my $cmd = shift @argv;
 	my $auth = $fun->{$personality}->{$cmd}->{auth};
 	if (defined($auth) && $auth > 0) {
-		enableauth($auth);
+		enableauth($cmd);
 	}
 	my $func = $fun->{$personality}->{$cmd}->{func};
 	if (defined($func)) {
