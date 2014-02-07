@@ -39,7 +39,7 @@ sub call {
     }
     $content .= "nonce=".$nonce;
     if (defined($query_string)) {
-    	$content .= "&".$query_string;
+        $content .= "&".$query_string;
     }
     printf STDERR "ApiKey: content = '%s'\n", $content;
     $req->body($content);
