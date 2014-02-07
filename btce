@@ -53,12 +53,13 @@ if (-f $configfile) {
 if (!defined($apikey) || !defined($secret)) {
 	printf STDERR "Either apikey or secret undefined, functions requiring this will not work\n";
 }
-my $btce = Finance::CoinBase->new( {
-	apifile => "$ENV{'HOME'}/git/sw/api-description/services/btce.json",
-	keyname => 'Key',
-	apikey => $apikey,
-	secret => $secret,
-    } );
+my $apifile = "$ENV{'HOME'}/git/sw/api-description/services/btce.json";
+my $btce = Finance::CoinBase->new({ apifile => $apifile });
+$btce->{api}->enable('Auth::ApiKey',
+	key_name => 'Key',
+	api_key => $apikey,
+	api_secret => $secret,
+    );
 
 sub
 act
@@ -88,7 +89,7 @@ act
 		return;
 	}
 
-	print $btce->dumpit($res);
+	$btce->dumpit($res);
 	return;
 	apikeywarn:
 	printf STDERR "%s requires an api key, noop\n", $argv[0];
