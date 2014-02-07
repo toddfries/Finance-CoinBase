@@ -162,15 +162,22 @@ sub bexchange {
 }
 
 $fun->{voipms}->{getBalance}->{func} = "vmscall";
-#$fun->{voipms}->{getBalance}->{auth} = 2;
-#$fun->{voipms}->{keyname} = 'api_username';
-#$fun->{voipms}->{secname} = 'api_password';
-
 sub vmscall {
 	my ($spore, $cmd, @argv) = @_;
 
 	return $spore->api($cmd, {method => $cmd, api_username => $id, api_password => $secret});
 }
+
+$fun->{cryptsy}->{singlemarketdata}->{func} = "cmarketid";
+sub cmarketid {
+	my ($spore, $cmd, @argv) = @_;
+	if (!defined($argv[0])) {
+		print STDERR $cmd." requires an argument <marketid>\n";
+		return;
+	}
+	return $spore->api($cmd, { method => $cmd, marketid => $argv[0] });
+}
+
 our $authenabled = 0;
 
 if (@ARGV) {
