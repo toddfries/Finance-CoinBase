@@ -1,4 +1,4 @@
-Finance-CoinBase version 0.00
+sporecli version 0.01
 =============================
 
 INSTALLATION
@@ -22,9 +22,12 @@ This module requires these other modules and libraries:
 
 NOTES
 
-This module needs a new name.  Using the .json files from
-api-description it provides enough functionality to sign in
-to various apis.  Suggestionsed welcome!
+This is an example perl app that can drive multiple apis.
+
+Example usage:
+
+  perl -I./lib ./cli btce
+  btce> ticker btc_usd
 
 COPYRIGHT AND LICENCE
 
