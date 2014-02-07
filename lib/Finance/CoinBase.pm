@@ -68,28 +68,13 @@ sub new
 		return undef;
 	}
 
-	my $keyname = $args->{'keyname'};
-	if (!defined($keyname)) {
-		$keyname = 'Key';
-	}
 	$self->{api} = Net::HTTP::Spore->new_from_spec($apifile);
 	$self->{api}->enable('Format::JSON');
-	#$self->{api}->enable( 'Redirection', max_redirect => 5 );
-	if (defined($args->{'apikey'}) && defined($args->{'secret'})) {
-		print STDERR "apikey && secret exist, enabling Auth::ApiKey\n";
-		$self->{api}->enable('Auth::ApiKey',
-			key_name => $keyname,
-        		api_key  => $args->{'apikey'},
-        		api_secret => $args->{'secret'},
-		);
-		print STDERR "... success!\n";
-	}
 
 	my $ret = bless $self, $class;
 
 	return $ret;
 }
-
 
 sub dumpit
 {
