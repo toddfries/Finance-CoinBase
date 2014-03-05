@@ -185,6 +185,16 @@ sub cmarketid {
 	return $spore->api($cmd, { method => $cmd, marketid => $argv[0] });
 }
 
+$fun->{kraken}->{ticker}->{func} = "krtick";
+sub krtick {
+	my ($spore, $cmd, @argv) = @_;
+
+	if (!defined($argv[1])) {
+		print STDERR $cmd." requires arguments <cur1> <cur2>\n";
+	}
+	return $spore->api($cmd, { pair => $argv[0]."_".$argv[1] });
+}
+
 our $authenabled = 0;
 
 if (@ARGV) {
