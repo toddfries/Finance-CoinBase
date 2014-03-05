@@ -161,11 +161,18 @@ sub bexchange {
 	return $spore->api($cmd, {exchange => $argv[0]});
 }
 
-$fun->{voipms}->{getBalance}->{func} = "vmscall";
+$fun->{voipms}->{func} = "vmscall";
+$fun->{voipms}->{getCharges}->{func} = "vmsclient";
 sub vmscall {
 	my ($spore, $cmd, @argv) = @_;
 
 	return $spore->api($cmd, {method => $cmd, api_username => $id, api_password => $secret});
+}
+sub vmsclient {
+	my ($spore, $cmd, @argv) = @_;
+
+	return $spore->api($cmd, {method => $cmd, api_username => $id,
+	    api_password => $secret, client => $argv[0]} );
 }
 
 $fun->{cryptsy}->{singlemarketdata}->{func} = "cmarketid";
@@ -262,6 +269,9 @@ act
 		eval "\$res = ${func}(\$spore, \$cmd, \@argv)";
 	} elsif ($cmd eq "quit") {
 		exit(0);
+	} elsif (defined($fun->{$personality}->{func})) {
+		$func = $fun->{$personality}->{func};
+		eval "\$res = ${func}(\$spore, \$cmd, \@argv)";
 	} else {
 		printf STDERR "spore->api('%s', {method => '%s'})\n", $cmd, $cmd;
 		$res = $spore->api($cmd, {method => $cmd});
